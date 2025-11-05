@@ -7,6 +7,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -15,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -35,6 +37,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.transition.AutoTransition;
@@ -125,11 +128,42 @@ public class UCropActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (Build.VERSION.SDK_INT >= 35) {
+            EdgeToEdge.enable(this);
+        }
+
         final Intent intent = getIntent();
 
         setupSystemBars(intent);
         setContentView(R.layout.ucrop_activity_photobox);
         setupViews(intent);
+
+        View rootView = findViewById(R.id.ucrop_photobox); // Make sure you have an ID on your root layout
+
+        if (Build.VERSION.SDK_INT >= 35) {
+            ViewCompat.setOnApplyWindowInsetsListener(rootView, new OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
+                    // Get the insets for the system bars (status bar, navigation bar).
+                    androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+                    // Apply the insets as padding to the view.
+                    // This pushes your content down from the status bar and up from the navigation bar.
+                    v.setPadding(
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom
+                    );
+
+                    // Return the insets to allow other views to consume them if needed.
+                    // If you are done with the insets, you could return WindowInsetsCompat.CONSUMED,
+                    // but returning the original insets is common practice.
+                    return insets;
+                }
+            });
+        }
+
         setImageData(intent);
         setInitialState();
         addBlockingView();
